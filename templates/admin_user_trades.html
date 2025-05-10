@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - User Trades</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #343a40;
+            color: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .logo-container {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .sidebar-logo {
+            max-width: 100%;
+            height: 40px;
+        }
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .nav-item {
+            margin: 0;
+            padding: 0;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .nav-link:hover, .nav-item.active .nav-link {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .nav-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+        .content-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+        .dashboard-container {
+            display: flex;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .status-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .status-accepted {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-rejected {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-completed {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .user-info-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 10px;
+            color: white;
+        }
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+        }
+        .user-avatar-placeholder {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            border: 3px solid white;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="sidebar">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo" alt="Logo">
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/admin_dashboard" class="nav-link">
+                    <i class="nav-icon">📊</i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item active">
+                <a href="/users" class="nav-link">
+                    <i class="nav-icon">👥</i>
+                    <span>User Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/listings" class="nav-link">
+                    <i class="nav-icon">📦</i>
+                    <span>Listing Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/trades" class="nav-link">
+                    <i class="nav-icon">🔄</i>
+                    <span>Trade Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/installments" class="nav-link">
+                    <i class="nav-icon">💰</i>
+                    <span>Installments</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/donations" class="nav-link">
+                    <i class="nav-icon">🎁</i>
+                    <span>Donations</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/reviews" class="nav-link">
+                    <i class="nav-icon">⭐</i>
+                    <span>Reviews</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/settings" class="nav-link">
+                    <i class="nav-icon">⚙️</i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content gradient-bg">
+        <!-- Logout Button -->
+        <a href="/logout" class="btn btn-light logout-btn">
+            <i class="nav-icon">🚪</i> Logout
+        </a>
+        
+        <div class="content-container">
+            <!-- User Info -->
+            <div class="card user-info-card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        {% if user.profile_image %}
+                            <img src="{{ url_for('static', filename='uploads/profiles/' + user.profile_image) }}" class="user-avatar me-4" alt="{{ user.first_name }} {{ user.last_name }}">
+                        {% else %}
+                            <div class="user-avatar-placeholder me-4">
+                                {{ user.first_name[0] }}{{ user.last_name[0] }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h2 class="mb-1">{{ user.first_name }} {{ user.last_name }}</h2>
+                            <p class="mb-1">{{ user.email }}</p>
+                            <p class="mb-0">
+                                <span class="badge {% if user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Active' if user.is_active else 'Inactive' }}
+                                </span>
+                                <span class="badge bg-info ms-2">{{ user.role|capitalize }}</span>
+                                <span class="badge bg-secondary ms-2">Member since {{ user.created_at.strftime('%B %Y') }}</span>
+                            </p>
+                        </div>
+                        <div class="ms-auto">
+                            <a href="/profile/{{ user.id }}" class="btn btn-light me-2">View Profile</a>
+                            <a href="/admin/users/{{ user.id }}/edit" class="btn btn-primary">Edit User</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-white mb-0">User Trades</h2>
+                <div>
+                    <a href="/admin/users/{{ user.id }}/listings" class="btn btn-light me-2">View Listings</a>
+                    <a href="/admin/users/{{ user.id }}/reviews" class="btn btn-light">View Reviews</a>
+                </div>
+            </div>
+            
+            <!-- Filter Options -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form action="/admin/users/{{ user.id }}/trades" method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="tradeType" class="form-label">Trade Type</label>
+                            <select class="form-select" id="tradeType" name="type">
+                                <option value="">All Types</option>
+                                <option value="purchase" {% if selected_type == 'purchase' %}selected{% endif %}>Purchase</option>
+                                <option value="exchange" {% if selected_type == 'exchange' %}selected{% endif %}>Exchange</option>
+                                <option value="loan" {% if selected_type == 'loan' %}selected{% endif %}>Loan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="tradeStatus" class="form-label">Status</label>
+                            <select class="form-select" id="tradeStatus" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="accepted" {% if selected_status == 'accepted' %}selected{% endif %}>Accepted</option>
+                                <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="tradeRole" class="form-label">User Role</label>
+                            <select class="form-select" id="tradeRole" name="role">
+                                <option value="">Both Roles</option>
+                                <option value="initiator" {% if selected_role == 'initiator' %}selected{% endif %}>Initiator</option>
+                                <option value="receiver" {% if selected_role == 'receiver' %}selected{% endif %}>Receiver</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">Filter</button>
+                            <a href="/admin/users/{{ user.id }}/trades" class="btn btn-secondary">Reset</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Trades Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Trade History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Role</th>
+                                    <th>Other Party</th>
+                                    <th>Item</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trade in trades %}
+                                    <tr>
+                                        <td>{{ trade.id }}</td>
+                                        <td>
+                                            <span class="badge {% if trade.trade_type == 'purchase' %}bg-primary{% elif trade.trade_type == 'exchange' %}bg-success{% elif trade.trade_type == 'loan' %}bg-warning{% else %}bg-info{% endif %}">
+                                                {{ trade.trade_type|capitalize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if trade.initiator_id == user.id %}
+                                                Initiator
+                                            {% else %}
+                                                Receiver
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if trade.initiator_id == user.id %}
+                                                {{ trade.receiver.first_name }} {{ trade.receiver.last_name }}
+                                            {% else %}
+                                                {{ trade.initiator.first_name }} {{ trade.initiator.last_name }}
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ trade.listing.title|truncate(20) }}</td>
+                                        <td>
+                                            <span class="badge status-{{ trade.status }}">
+                                                {{ trade.status|upper }}
+                                            </span>
+                                        </td>
+                                        <td>{{ trade.created_at.strftime('%m/%d/%y %H:%M') }}</td>
+                                        <td>{{ trade.updated_at.strftime('%m/%d/%y %H:%M') if trade.updated_at else '-' }}</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="/trades/{{ trade.id }}" class="btn btn-sm btn-primary">View</a>
+                                                <button type="button" class="btn btn-sm btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <span class="visually-hidden">Toggle Dropdown</span>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="/admin/trades/{{ trade.id }}/edit">Edit</a></li>
+                                                    <li><a class="dropdown-item" href="/listings/{{ trade.listing_id }}">View Listing</a></li>
+                                                    {% if trade.trade_type == 'exchange' and trade.offered_listing_id %}
+                                                        <li><a class="dropdown-item" href="/listings/{{ trade.offered_listing_id }}">View Offered Item</a></li>
+                                                    {% endif %}
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteTradeModal{{ trade.id }}">
+                                                            Delete
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="9" class="text-center">No trades found for this user.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

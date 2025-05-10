@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - Apply for Installment</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo" alt="Logo">
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/user_dashboard" class="nav-link">
+                        <i class="nav-icon">📊</i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/profile/{{ session['user_id'] }}" class="nav-link">
+                        <i class="nav-icon">👤</i>
+                        <span>Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/add_review" class="nav-link">
+                        <i class="nav-icon">✍️</i>
+                        <span>Add Review</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="/my_installments" class="nav-link">
+                        <i class="nav-icon">💰</i>
+                        <span>My Installments</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content gradient-bg">
+            <!-- Logout Button -->
+            <a href="/logout" class="btn btn-light logout-btn">
+                <i class="nav-icon">🚪</i> Logout
+            </a>
+            
+            <div class="content-container">
+                <h2 class="text-white mb-4">Apply for Installment</h2>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('apply_installment') }}">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="amount" class="form-label">Amount Requested ($) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="100" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="duration" class="form-label">Duration (Months) <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="duration" name="duration" required>
+                                        <option value="">Select duration</option>
+                                        <option value="3">3 months</option>
+                                        <option value="6">6 months</option>
+                                        <option value="12">12 months</option>
+                                        <option value="24">24 months</option>
+                                        <option value="36">36 months</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="purpose" class="form-label">Purpose <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="purpose" name="purpose" required>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="income" class="form-label">Monthly Income ($) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="income" name="income" step="0.01" min="0" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="employment_status" class="form-label">Employment Status <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="employment_status" name="employment_status" required>
+                                        <option value="">Select status</option>
+                                        <option value="Full-time">Full-time</option>
+                                        <option value="Part-time">Part-time</option>
+                                        <option value="Self-employed">Self-employed</option>
+                                        <option value="Unemployed">Unemployed</option>
+                                        <option value="Student">Student</option>
+                                        <option value="Retired">Retired</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="employer" class="form-label">Employer/Company Name</label>
+                                <input type="text" class="form-control" id="employer" name="employer">
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-text mb-2">
+                                    <span class="text-danger">*</span> Required fields
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terms" required>
+                                    <label class="form-check-label" for="terms">
+                                        I agree to the terms and conditions and confirm that all information provided is accurate.
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Submit Application</button>
+                                <a href="{{ url_for('user_dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

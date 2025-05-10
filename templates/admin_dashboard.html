@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #343a40;
+            color: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .logo-container {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .sidebar-logo {
+            max-width: 100%;
+            height: 40px;
+        }
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .nav-item {
+            margin: 0;
+            padding: 0;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .nav-link:hover, .nav-item.active .nav-link {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .nav-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+        .content-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+        .dashboard-container {
+            display: flex;
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .submenu {
+            list-style: none;
+            padding-left: 30px;
+            display: none;
+        }
+        .submenu.active {
+            display: block;
+        }
+        .submenu li {
+            padding: 8px 0;
+        }
+        .submenu li a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .submenu li a:hover {
+            color: white;
+        }
+        .dropdown-icon {
+            margin-left: auto;
+            transition: transform 0.3s;
+        }
+        .nav-item.active .dropdown-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="sidebar">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo" alt="Logo">
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active">
+                <a href="/admin_dashboard" class="nav-link">
+                    <i class="nav-icon">📊</i>
+                    <span>Dashboards</span>
+                    <i class="dropdown-icon">▼</i>
+                </a>
+                <ul class="submenu">
+                    <li><a href="/users">Users</a></li>
+                    <li><a href="/installments">Installments</a></li>
+                    <li><a href="/reviews">Reviews</a></li>
+                    <li><a href="/admin/trades">Trades</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content gradient-bg">
+        <!-- Logout Button -->
+        <a href="/logout" class="btn btn-light logout-btn">
+            <i class="nav-icon">🚪</i> Logout
+        </a>
+        
+        <div class="content-container">
+            <h2 class="text-white mb-4">Dashboard</h2>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Current Users</h5>
+                            <div class="dropdown">
+                                <select class="form-select form-select-sm">
+                                    <option>30 Days</option>
+                                    <option>60 Days</option>
+                                    <option>90 Days</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary p-3 rounded me-3">
+                                    <i class="text-white">👥</i>
+                                </div>
+                                <h1 class="display-4 mb-0">{{ user_count }}</h1>
+                            </div>
+                            <div class="mt-3">
+                                <a href="/users" class="btn btn-sm btn-outline-primary">Manage Users</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Pending Installments</h5>
+                            <span class="badge bg-warning text-dark">{{ pending_installments }}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning p-3 rounded me-3">
+                                    <i class="text-dark">💰</i>
+                                </div>
+                                <h1 class="display-4 mb-0">{{ pending_installments }}</h1>
+                            </div>
+                            <div class="mt-3">
+                                <a href="/installments?status=pending" class="btn btn-sm btn-warning">Review Applications</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Purchases</h5>
+                            <span class="badge bg-success">{{ purchase_trades_count }}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success p-3 rounded me-3">
+                                    <i class="text-white">🛒</i>
+                                </div>
+                                <h1 class="display-4 mb-0">{{ purchase_trades_count }}</h1>
+                            </div>
+                            <div class="mt-3">
+                                <a href="/admin/trades?type=purchase" class="btn btn-sm btn-success">View Purchases</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Recent Reviews</h5>
+                            <a href="/reviews" class="btn btn-sm btn-primary">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>TITLE</th>
+                                            <th>TAGS</th>
+                                            <th>DATE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for review in reviews %}
+                                            <tr>
+                                                <td>{{ review.id }}</td>
+                                                <td>{{ review.title }}</td>
+                                                <td>{{ review.tags }}</td>
+                                                <td>{{ review.date.strftime('%m/%d/%y') }}</td>
+                                            </tr>
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="4" class="text-center">No reviews available.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Purchases Section -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Recent Purchases</h5>
+                            <a href="/admin/trades?type=purchase" class="btn btn-sm btn-primary">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Buyer</th>
+                                            <th>Seller</th>
+                                            <th>Item</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for trade in recent_purchase_trades %}
+                                            <tr>
+                                                <td>{{ trade.id }}</td>
+                                                <td>{{ trade.initiator.first_name }} {{ trade.initiator.last_name }}</td>
+                                                <td>{{ trade.receiver.first_name }} {{ trade.receiver.last_name }}</td>
+                                                <td>{{ trade.listing.title|truncate(20) }}</td>
+                                                <td>
+                                                    <span class="badge {% if trade.status == 'pending' %}bg-warning{% elif trade.status == 'accepted' %}bg-success{% elif trade.status == 'rejected' %}bg-danger{% else %}bg-info{% endif %}">
+                                                        {{ trade.status|capitalize }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ trade.created_at.strftime('%m/%d/%y') }}</td>
+                                                <td>
+                                                    <a href="/trades/{{ trade.id }}" class="btn btn-sm btn-primary">View</a>
+                                                </td>
+                                            </tr>
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="7" class="text-center">No purchases available.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

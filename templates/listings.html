@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - Browse Listings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .listing-card {
+            transition: all 0.3s ease;
+            height: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .listing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .listing-image {
+            height: 200px;
+            object-fit: cover;
+        }
+        .filter-sidebar {
+            position: sticky;
+            top: 20px;
+        }
+        .badge-corner {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+        }
+        .price-range {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .price-input {
+            width: 80px;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .search-bar {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/home">
+                <img src="{{ url_for('static', filename='logo.png') }}" height="40" alt="Exchangify">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/listings">Browse</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown">
+                            Categories
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
+                            {% for category in categories %}
+                                <li><a class="dropdown-item" href="/listings?category={{ category.id }}">{{ category.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/user_dashboard">Dashboard</a>
+                    </li>
+                </ul>
+                
+                <form class="d-flex search-bar mx-auto" action="/listings" method="GET">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="q" placeholder="Search for items..." value="{{ search_query }}">
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </div>
+                </form>
+                
+                <div class="nav-buttons ms-auto">
+                    {% if session.user_id %}
+                        <a href="/cart" class="btn btn-outline-light position-relative me-2">
+                            <i class="nav-icon">🛒</i>
+                            {% if cart_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {{ cart_count }}
+                                </span>
+                            {% endif %}
+                        </a>
+                        <a href="/wishlist" class="btn btn-outline-light position-relative me-2">
+                            <i class="nav-icon">❤️</i>
+                            {% if wishlist_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {{ wishlist_count }}
+                                </span>
+                            {% endif %}
+                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="nav-icon">👤</i> {{ session.user_name }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="/user_dashboard">Dashboard</a></li>
+                                <li><a class="dropdown-item" href="/my_listings">My Listings</a></li>
+                                <li><a class="dropdown-item" href="/trades">My Trades</a></li>
+                                <li><a class="dropdown-item" href="/profile/{{ session.user_id }}">Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="/login" class="btn btn-outline-light me-2">Login</a>
+                        <a href="/signup" class="btn btn-primary">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <div class="row">
+            <!-- Filter Sidebar -->
+            <div class="col-lg-3 mb-4">
+                <div class="card filter-sidebar">
+                    <div class="card-header">
+                        <h5 class="mb-0">Filters</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/listings" method="GET" id="filterForm">
+                            <!-- Preserve search query if any -->
+                            {% if search_query %}
+                                <input type="hidden" name="q" value="{{ search_query }}">
+                            {% endif %}
+                            
+                            <!-- Categories -->
+                            <div class="mb-4">
+                                <h6>Categories</h6>
+                                <select class="form-select" name="category" onchange="this.form.submit()">
+                                    <option value="">All Categories</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
+                                            {{ category.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Listing Type -->
+                            <div class="mb-4">
+                                <h6>Listing Type</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="type" id="typeAll" value="" {% if not selected_type %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="typeAll">All Types</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="type" id="typeSale" value="sale" {% if selected_type == 'sale' %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="typeSale">For Sale</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="type" id="typeExchange" value="exchange" {% if selected_type == 'exchange' %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="typeExchange">For Exchange</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="type" id="typeLoan" value="loan" {% if selected_type == 'loan' %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="typeLoan">For Loan</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="type" id="typeDonation" value="donation" {% if selected_type == 'donation' %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="typeDonation">Donation</label>
+                                </div>
+                            </div>
+                            
+                            <!-- Condition -->
+                            <div class="mb-4">
+                                <h6>Condition</h6>
+                                <select class="form-select" name="condition" onchange="this.form.submit()">
+                                    <option value="">Any Condition</option>
+                                    <option value="New" {% if selected_condition == 'New' %}selected{% endif %}>New</option>
+                                    <option value="Like New" {% if selected_condition == 'Like New' %}selected{% endif %}>Like New</option>
+                                    <option value="Good" {% if selected_condition == 'Good' %}selected{% endif %}>Good</option>
+                                    <option value="Fair" {% if selected_condition == 'Fair' %}selected{% endif %}>Fair</option>
+                                    <option value="Poor" {% if selected_condition == 'Poor' %}selected{% endif %}>Poor</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Price Range (only for sale items) -->
+                            <div class="mb-4" id="priceRangeContainer" {% if selected_type and selected_type != 'sale' %}style="display: none;"{% endif %}>
+                                <h6>Price Range</h6>
+                                <div class="price-range mb-2">
+                                    <span>$</span>
+                                    <input type="number" class="form-control price-input" name="min_price" placeholder="Min" value="{{ min_price }}">
+                                    <span>to</span>
+                                    <input type="number" class="form-control price-input" name="max_price" placeholder="Max" value="{{ max_price }}">
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-primary w-100">Apply Price</button>
+                            </div>
+                            
+                            <!-- Location Radius -->
+                            <div class="mb-4">
+                                <h6>Distance</h6>
+                                <select class="form-select" name="radius" onchange="this.form.submit()">
+                                    <option value="10" {% if radius == 10 %}selected{% endif %}>Within 10 km</option>
+                                    <option value="25" {% if radius == 25 %}selected{% endif %}>Within 25 km</option>
+                                    <option value="50" {% if radius == 50 %}selected{% endif %}>Within 50 km</option>
+                                    <option value="100" {% if radius == 100 %}selected{% endif %}>Within 100 km</option>
+                                    <option value="0" {% if radius == 0 or not radius %}selected{% endif %}>Any Distance</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Clear Filters -->
+                            <div class="d-grid">
+                                <a href="/listings" class="btn btn-outline-secondary">Clear All Filters</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Listings Grid -->
+            <div class="col-lg-9">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Browse Listings</h2>
+                    {% if session.user_id %}
+                        <a href="/listings/new" class="btn btn-primary">
+                            <i class="nav-icon">➕</i> Create Listing
+                        </a>
+                    {% endif %}
+                </div>
+                
+                {% if listings %}
+                    <div class="row g-4">
+                        {% for listing in listings %}
+                            <div class="col-md-4">
+                                <div class="card listing-card h-100">
+                                    <span class="badge-corner badge {% if listing.listing_type == 'sale' %}bg-primary{% elif listing.listing_type == 'exchange' %}bg-success{% elif listing.listing_type == 'loan' %}bg-warning{% else %}bg-info{% endif %}">
+                                        {{ listing.listing_type|capitalize }}
+                                    </span>
+                                    {% if listing.images %}
+                                        <img src="{{ url_for('static', filename='uploads/listings/' + listing.images[0].filename) }}" class="card-img-top listing-image" alt="{{ listing.title }}">
+                                    {% else %}
+                                        <div class="card-img-top listing-image bg-light d-flex align-items-center justify-content-center">
+                                            <span class="text-muted">No Image</span>
+                                        </div>
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ listing.title }}</h5>
+                                        <p class="card-text text-truncate">{{ listing.description }}</p>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            {% if listing.price %}
+                                                <span class="fw-bold">${{ "%.2f"|format(listing.price) }}</span>
+                                            {% else %}
+                                                <span class="text-muted">No Price</span>
+                                            {% endif %}
+                                            <span class="badge bg-secondary">{{ listing.condition }}</span>
+                                        </div>
+                                        {% if listing.distance is defined %}
+                                            <p class="card-text"><small class="text-muted">{{ listing.distance }} km away</small></p>
+                                        {% endif %}
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="/listings/{{ listing.id }}" class="btn btn-sm btn-primary">View Details</a>
+                                            {% if session.user_id and listing.owner.id != session.user_id %}
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-outline-danger add-to-wishlist" data-listing-id="{{ listing.id }}" title="Add to Wishlist">
+                                                        <i class="nav-icon">❤️</i>
+                                                    </button>
+                                                    {% if listing.listing_type == 'sale' %}
+                                                        <button class="btn btn-sm btn-outline-primary add-to-cart" data-listing-id="{{ listing.id }}" title="Add to Cart">
+                                                            <i class="nav-icon">🛒</i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="card-footer text-muted">
+                                        <small>Listed by {{ listing.owner.first_name }} {{ listing.owner.last_name }} on {{ listing.created_at.strftime('%m/%d/%y') }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <h4 class="alert-heading">No listings found!</h4>
+                        <p>Try adjusting your filters or search criteria to find what you're looking for.</p>
+                        {% if session.user_id %}
+                            <hr>
+                            <p class="mb-0">Or <a href="/listings/new" class="alert-link">create your own listing</a> to get started!</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2023 Exchangify. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/about" class="text-white me-3">About</a>
+                    <a href="/contact" class="text-white me-3">Contact</a>
+                    <a href="/terms" class="text-white me-3">Terms</a>
+                    <a href="/privacy" class="text-white">Privacy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show/hide price range based on listing type
+            const typeRadios = document.querySelectorAll('input[name="type"]');
+            const priceRangeContainer = document.getElementById('priceRangeContainer');
+            
+            typeRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'sale' || this.value === '') {
+                        priceRangeContainer.style.display = 'block';
+                    } else {
+                        priceRangeContainer.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Add to wishlist functionality
+            const wishlistButtons = document.querySelectorAll('.add-to-wishlist');
+            wishlistButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const listingId = this.getAttribute('data-listing-id');
+                    
+                    fetch('/api/wishlist/toggle', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            listing_id: listingId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Toggle button appearance
+                            if (data.in_wishlist) {
+                                this.classList.remove('btn-outline-danger');
+                                this.classList.add('btn-danger');
+                            } else {
+                                this.classList.remove('btn-danger');
+                                this.classList.add('btn-outline-danger');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                });
+            });
+            
+            // Add to cart functionality
+            const cartButtons = document.querySelectorAll('.add-to-cart');
+            cartButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const listingId = this.getAttribute('data-listing-id');
+                    
+                    fetch('/api/cart/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            listing_id: listingId,
+                            quantity: 1
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            alert('Item added to cart!');
+                            
+                            // Update cart count if available
+                            const cartCountBadge = document.querySelector('a[href="/cart"] .badge');
+                            if (cartCountBadge) {
+                                cartCountBadge.textContent = data.cart_count;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                });
+            });
+        });
+    </script>
+    <script>
+// Fix for navigation links
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure all navigation links work properly
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href && href !== '#') {
+                window.location.href = href;
+            }
+        });
+    });
+});
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93c30cdcc89a4520',t:'MTc0NjY0NTM3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

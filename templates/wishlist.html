@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - Your Wishlist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .wishlist-card {
+            transition: all 0.3s ease;
+            height: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .wishlist-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .wishlist-image {
+            height: 200px;
+            object-fit: cover;
+        }
+        .badge-corner {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+        }
+        .empty-wishlist {
+            text-align: center;
+            padding: 50px 0;
+        }
+        .empty-wishlist-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/home">
+                <img src="{{ url_for('static', filename='logo.png') }}" height="40" alt="Exchangify">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/listings">Browse</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/user_dashboard">Dashboard</a>
+                    </li>
+                </ul>
+                
+                <div class="nav-buttons ms-auto">
+                    <a href="/cart" class="btn btn-outline-light position-relative me-2">
+                        <i class="nav-icon">🛒</i>
+                    </a>
+                    <a href="/wishlist" class="btn btn-outline-light position-relative me-2 active">
+                        <i class="nav-icon">❤️</i>
+                        {% if wishlist_items|length > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ wishlist_items|length }}
+                            </span>
+                        {% endif %}
+                    </a>
+                    <a href="/notifications" class="btn btn-outline-light position-relative me-2">
+                        <i class="nav-icon">🔔</i>
+                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="nav-icon">👤</i> {{ session.user_name }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="/user_dashboard">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/my_listings">My Listings</a></li>
+                            <li><a class="dropdown-item" href="/trades">My Trades</a></li>
+                            <li><a class="dropdown-item" href="/profile/{{ session.user_id }}">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Your Wishlist</h1>
+            <a href="/listings" class="btn btn-primary">
+                <i class="nav-icon">🔍</i> Browse More Items
+            </a>
+        </div>
+        
+        {% if wishlist_items %}
+            <div class="row g-4">
+                {% for item in wishlist_items %}
+                    <div class="col-md-4 col-lg-3" id="wishlist-item-{{ item.id }}">
+                        <div class="card wishlist-card h-100">
+                            <span class="badge-corner badge {% if item.listing.listing_type == 'sale' %}bg-primary{% elif item.listing.listing_type == 'exchange' %}bg-success{% elif item.listing.listing_type == 'loan' %}bg-warning{% else %}bg-info{% endif %}">
+                                {{ item.listing.listing_type|capitalize }}
+                            </span>
+                            {% if item.listing.images %}
+                                <img src="{{ url_for('static', filename='uploads/listings/' + item.listing.images[0].filename) }}" class="card-img-top wishlist-image" alt="{{ item.listing.title }}">
+                            {% else %}
+                                <div class="card-img-top wishlist-image bg-light d-flex align-items-center justify-content-center">
+                                    <span class="text-muted">No Image</span>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ item.listing.title }}</h5>
+                                <p class="card-text text-truncate">{{ item.listing.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    {% if item.listing.price %}
+                                        <span class="fw-bold">${{ "%.2f"|format(item.listing.price) }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No Price</span>
+                                    {% endif %}
+                                    <span class="badge bg-secondary">{{ item.listing.condition }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="/listings/{{ item.listing.id }}" class="btn btn-sm btn-primary">View Details</a>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-danger remove-from-wishlist" data-listing-id="{{ item.listing.id }}">
+                                            <i class="nav-icon">❤️</i>
+                                        </button>
+                                        {% if item.listing.listing_type == 'sale' %}
+                                            <button class="btn btn-sm btn-outline-primary add-to-cart" data-listing-id="{{ item.listing.id }}">
+                                                <i class="nav-icon">🛒</i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-muted">
+                                <small>Added on {{ item.added_at.strftime('%m/%d/%y') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-wishlist">
+                <div class="empty-wishlist-icon">❤️</div>
+                <h3>Your wishlist is empty</h3>
+                <p class="text-muted mb-4">Save items you're interested in by clicking the heart icon on any listing.</p>
+                <a href="/listings" class="btn btn-primary">Browse Listings</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2023 Exchangify. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/about" class="text-white me-3">About</a>
+                    <a href="/contact" class="text-white me-3">Contact</a>
+                    <a href="/terms" class="text-white me-3">Terms</a>
+                    <a href="/privacy" class="text-white">Privacy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remove from wishlist functionality
+            const removeButtons = document.querySelectorAll('.remove-from-wishlist');
+            removeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const listingId = this.getAttribute('data-listing-id');
+                    
+                    fetch('/api/wishlist/toggle', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            listing_id: listingId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && !data.in_wishlist) {
+                            // Find the parent card and remove it
+                            const card = this.closest('.col-md-4');
+                            card.remove();
+                            
+                            // If no items left, reload the page to show empty wishlist
+                            if (document.querySelectorAll('.wishlist-card').length === 0) {
+                                window.location.reload();
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                });
+            });
+            
+            // Add to cart functionality
+            const addToCartButtons = document.querySelectorAll('.add-to-cart');
+            addToCartButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const listingId = this.getAttribute('data-listing-id');
+                    
+                    fetch('/api/cart/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            listing_id: listingId,
+                            quantity: 1
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Item added to cart!');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

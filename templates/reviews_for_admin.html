@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - Manage Reviews</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Include the sidebar -->
+        <div class="sidebar">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo" alt="Logo">
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="/admin_dashboard" class="nav-link">
+                        <i class="nav-icon">📊</i>
+                        <span>Dashboards</span>
+                        <i class="dropdown-icon">▼</i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="/users">Users</a></li>
+                        <li><a href="/">Purchases</a></li>
+                        <li><a href="/reviews">Reviews</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content gradient-bg">
+            <!-- Logout Button -->
+            <a href="/logout" class="btn btn-light logout-btn">
+                <i class="nav-icon">🚪</i> Logout
+            </a>
+            
+            <div class="content-container">
+                <h2 class="text-white mb-4">Manage Reviews</h2>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Search Form -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form action="{{ url_for('reviews') }}" method="GET" class="row g-3 align-items-center">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="search" placeholder="Search reviews by title, content, or tags" value="{{ search_query }}">
+                                    <button class="btn btn-primary" type="submit">Search</button>
+                                </div>
+                            </div>
+                            {% if search_query %}
+                            <div class="col-md-2">
+                                <a href="{{ url_for('reviews') }}" class="btn btn-secondary">Clear</a>
+                            </div>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="40"><input type="checkbox" class="form-check-input"></th>
+                                        <th>ID</th>
+                                        <th>TITLE</th>
+                                        <th>TAGS</th>
+                                        <th>DATE</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for review in reviews %}
+                                        <tr>
+                                            <td><input type="checkbox" class="form-check-input"></td>
+                                            <td>{{ review.id }}</td>
+                                            <td>{{ review.title }}</td>
+                                            <td>{{ review.tags }}</td>
+                                            <td>{{ review.date.strftime('%m/%d/%y') }}</td>
+                                            <td>
+                                                <div class="d-flex gap-2">
+                                                    <button class="btn btn-sm btn-outline-primary view-review" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#viewReviewModal"
+                                                            data-id="{{ review.id }}"
+                                                            data-title="{{ review.title }}"
+                                                            data-content="{{ review.content }}"
+                                                            data-tags="{{ review.tags }}"
+                                                            data-date="{{ review.date.strftime('%m/%d/%y') }}">
+                                                        👁️ View
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger delete-review" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#deleteReviewModal"
+                                                            data-id="{{ review.id }}"
+                                                            data-title="{{ review.title }}">
+                                                        🗑️ Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="6" class="text-center">No reviews found.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Review Modal -->
+    <div class="modal fade" id="viewReviewModal" tabindex="-1" aria-labelledby="viewReviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewReviewModalLabel">Review Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h4 id="reviewTitle"></h4>
+                        <div class="d-flex gap-2 text-muted mb-3">
+                            <span id="reviewTags" class="badge bg-secondary"></span>
+                            <span id="reviewDate"></span>
+                        </div>
+                        <p id="reviewContent" class="border-top pt-3"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Review Modal -->
+    <div class="modal fade" id="deleteReviewModal" tabindex="-1" aria-labelledby="deleteReviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteReviewModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the review: <strong id="deleteReviewTitle"></strong>?</p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteReviewForm" method="POST" action="">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // View Review Modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const viewButtons = document.querySelectorAll('.view-review');
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const title = this.getAttribute('data-title');
+                    const content = this.getAttribute('data-content');
+                    const tags = this.getAttribute('data-tags');
+                    const date = this.getAttribute('data-date');
+                    
+                    document.getElementById('reviewTitle').textContent = title;
+                    document.getElementById('reviewContent').textContent = content;
+                    document.getElementById('reviewTags').textContent = tags;
+                    document.getElementById('reviewDate').textContent = date;
+                });
+            });
+            
+            // Delete Review Modal
+            const deleteButtons = document.querySelectorAll('.delete-review');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const title = this.getAttribute('data-title');
+                    
+                    document.getElementById('deleteReviewTitle').textContent = title;
+                    document.getElementById('deleteReviewForm').action = `/delete_review/${id}`;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

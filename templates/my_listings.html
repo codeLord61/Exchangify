@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - My Listings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .listing-card {
+            transition: all 0.3s ease;
+            height: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .listing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .listing-image {
+            height: 200px;
+            object-fit: cover;
+        }
+        .badge-corner {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+        }
+        .status-active {
+            background-color: #28a745;
+        }
+        .status-inactive {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/home">
+                <img src="{{ url_for('static', filename='logo.png') }}" height="40" alt="Exchangify">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/listings">Browse</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/user_dashboard">Dashboard</a>
+                    </li>
+                </ul>
+                
+                <div class="nav-buttons ms-auto">
+                    <a href="/cart" class="btn btn-outline-light position-relative me-2">
+                        <i class="nav-icon">🛒</i>
+                    </a>
+                    <a href="/wishlist" class="btn btn-outline-light position-relative me-2">
+                        <i class="nav-icon">❤️</i>
+                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="nav-icon">👤</i> {{ session.user_name }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="/user_dashboard">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/my_listings">My Listings</a></li>
+                            <li><a class="dropdown-item" href="/trades">My Trades</a></li>
+                            <li><a class="dropdown-item" href="/profile/{{ session.user_id }}">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>My Listings</h1>
+            <a href="/listings/new" class="btn btn-primary">
+                <i class="nav-icon">➕</i> Create New Listing
+            </a>
+        </div>
+        
+        {% if listings %}
+            <div class="row g-4">
+                {% for listing in listings %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card listing-card h-100">
+                            <span class="badge-corner badge {% if listing.listing_type == 'sale' %}bg-primary{% elif listing.listing_type == 'exchange' %}bg-success{% elif listing.listing_type == 'loan' %}bg-warning{% else %}bg-info{% endif %}">
+                                {{ listing.listing_type|capitalize }}
+                            </span>
+                            {% if listing.is_active %}
+                                <span class="badge status-active position-absolute top-0 start-0 m-2">Active</span>
+                            {% else %}
+                                <span class="badge status-inactive position-absolute top-0 start-0 m-2">Inactive</span>
+                            {% endif %}
+                            {% if listing.images %}
+                                <img src="{{ url_for('static', filename='uploads/listings/' + listing.images[0].filename) }}" class="card-img-top listing-image" alt="{{ listing.title }}">
+                            {% else %}
+                                <div class="card-img-top listing-image bg-light d-flex align-items-center justify-content-center">
+                                    <span class="text-muted">No Image</span>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ listing.title }}</h5>
+                                <p class="card-text text-truncate">{{ listing.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    {% if listing.price %}
+                                        <span class="fw-bold">${{ "%.2f"|format(listing.price) }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No Price</span>
+                                    {% endif %}
+                                    <span class="badge bg-secondary">{{ listing.condition }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="/listings/{{ listing.id }}" class="btn btn-sm btn-primary">View</a>
+                                    <div class="btn-group">
+                                        <a href="/listings/{{ listing.id }}/edit" class="btn btn-sm btn-warning">
+                                            <i class="nav-icon">✏️</i> Edit
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ listing.id }}">
+                                            <i class="nav-icon">🗑️</i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-muted">
+                                <small>Created on {{ listing.created_at.strftime('%m/%d/%y') }}</small>
+                                <small class="float-end">{{ listing.views }} views</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Delete Modal for each listing -->
+                    <div class="modal fade" id="deleteModal{{ listing.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ listing.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel{{ listing.id }}">Confirm Deletion</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Are you sure you want to delete "{{ listing.title }}"? This action cannot be undone.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form action="/listings/{{ listing.id }}/delete" method="POST">
+                                        <button type="submit" class="btn btn-danger">Delete Listing</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <h4 class="alert-heading">No listings found!</h4>
+                <p>You haven't created any listings yet.</p>
+                <hr>
+                <p class="mb-0">Click the "Create New Listing" button to get started!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2023 Exchangify. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/about" class="text-white me-3">About</a>
+                    <a href="/contact" class="text-white me-3">Contact</a>
+                    <a href="/terms" class="text-white me-3">Terms</a>
+                    <a href="/privacy" class="text-white">Privacy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

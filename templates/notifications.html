@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Exchangify - Notifications</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <style>
+      .notification-card {
+        background-color: white; /* Default white background for all cards */
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 15px;
+      }
+      .notification-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+      .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
+      .notification-unread {
+        background-color: #e3f2fd; /* Light blue for unread notifications */
+        border-left: 4px solid #0d6efd; /* Existing blue border */
+      }
+      .notification-type-trade {
+        background-color: #e3f2fd;
+        color: #0d6efd;
+      }
+      .notification-type-chat {
+        background-color: #e8f5e9;
+        color: #28a745;
+      }
+      .notification-type-donation {
+        background-color: #fff3cd;
+        color: #ffc107;
+      }
+      .notification-type-installment {
+        background-color: #f8d7da;
+        color: #dc3545;
+      }
+      .notification-type-review {
+        background-color: #d1ecf1;
+        color: #17a2b8;
+      }
+      .notification-unread {
+        border-left: 4px solid #0d6efd;
+      }
+      .notification-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+      }
+      .filter-btn {
+        margin-right: 5px;
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand" href="/home">
+          <img
+            src="{{ url_for('static', filename='logo.png') }}"
+            height="40"
+            alt="Exchangify"
+          />
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/home">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/listings">Browse</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/user_dashboard">Dashboard</a>
+            </li>
+          </ul>
+
+          <div class="nav-buttons ms-auto">
+            <a
+              href="/cart"
+              class="btn btn-outline-light position-relative me-2"
+            >
+              <i class="nav-icon">🛒</i>
+            </a>
+            <a
+              href="/wishlist"
+              class="btn btn-outline-light position-relative me-2"
+            >
+              <i class="nav-icon">❤️</i>
+            </a>
+            <a
+              href="/notifications"
+              class="btn btn-outline-light position-relative me-2 active"
+            >
+              <i class="nav-icon">🔔</i>
+            </a>
+            <div class="dropdown">
+              <button
+                class="btn btn-primary dropdown-toggle"
+                type="button"
+                id="userDropdown"
+                data-bs-toggle="dropdown"
+              >
+                <i class="nav-icon">👤</i> {{ session.user_name }}
+              </button>
+              <ul
+                class="dropdown-menu dropdown-menu-end"
+                aria-labelledby="userDropdown"
+              >
+                <li>
+                  <a class="dropdown-item" href="/user_dashboard">Dashboard</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/my_listings">My Listings</a>
+                </li>
+                <li><a class="dropdown-item" href="/trades">My Trades</a></li>
+                <li>
+                  <a class="dropdown-item" href="/profile/{{ session.user_id }}"
+                    >Profile</a
+                  >
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li><a class="dropdown-item" href="/logout">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+      <h1 class="mb-4">Notifications</h1>
+
+      <!-- Filter Buttons -->
+      <div class="mb-4">
+        <button
+          class="btn btn-outline-primary filter-btn active"
+          data-filter="all"
+        >
+          All
+        </button>
+        <button class="btn btn-outline-primary filter-btn" data-filter="trade">
+          Trades
+        </button>
+        <button class="btn btn-outline-primary filter-btn" data-filter="chat">
+          Messages
+        </button>
+        <button
+          class="btn btn-outline-primary filter-btn"
+          data-filter="donation"
+        >
+          Donations
+        </button>
+        <button
+          class="btn btn-outline-primary filter-btn"
+          data-filter="installment"
+        >
+          Installments
+        </button>
+        <button class="btn btn-outline-primary filter-btn" data-filter="review">
+          Reviews
+        </button>
+      </div>
+
+      <!-- Notifications List -->
+      <div class="notifications-container">
+        {% if notifications %} {% for notification in notifications %}
+        <div
+          class="card notification-card {% if not notification.is_read %}notification-unread{% endif %}"
+          data-notification-type="{{ notification.notification_type }}"
+        >
+          <div class="card-body">
+            <div class="d-flex">
+              <div
+                class="notification-icon notification-type-{{ notification.notification_type }} me-3"
+              >
+                {% if notification.notification_type == 'trade' %} 🔄 {% elif
+                notification.notification_type == 'chat' %} 💬 {% elif
+                notification.notification_type == 'donation' %} 🎁 {% elif
+                notification.notification_type == 'installment' %} 💰 {% elif
+                notification.notification_type == 'review' %} ⭐ {% else %} 📢
+                {% endif %}
+              </div>
+              <div class="flex-grow-1">
+                <h5 class="card-title">{{ notification.title }}</h5>
+                <p class="card-text">{{ notification.message }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="notification-time"
+                    >{{ notification.created_at.strftime('%m/%d/%y %H:%M')
+                    }}</span
+                  >
+                  {% if notification.notification_type == 'trade' and
+                  notification.related_id %}
+                  <a
+                    href="/trades/{{ notification.related_id }}"
+                    class="btn btn-sm btn-primary view-btn"
+                    data-notification-id="{{ notification.id }}"
+                    >View Trade</a
+                  >
+                  {% elif notification.notification_type == 'chat' and
+                  notification.related_id %}
+                  <a
+                    href="/chat"
+                    class="btn btn-sm btn-success view-btn"
+                    data-notification-id="{{ notification.id }}"
+                    >Open Chat</a
+                  >
+                  {% elif notification.notification_type == 'donation' and
+                  notification.related_id %}
+                  <a
+                    href="/donations/{{ notification.related_id }}"
+                    class="btn btn-sm btn-warning view-btn"
+                    data-notification-id="{{ notification.id }}"
+                    >View Donation</a
+                  >
+                  {% elif notification.notification_type == 'installment' and
+                  notification.related_id %}
+                  <a
+                    href="/my_installments"
+                    class="btn btn-sm btn-danger view-btn"
+                    data-notification-id="{{ notification.id }}"
+                    >View Installment</a
+                  >
+                  {% elif notification.notification_type == 'review' and
+                  notification.related_id %}
+                  <a
+                    href="/profile/{{ session.user_id }}"
+                    class="btn btn-sm btn-info view-btn"
+                    data-notification-id="{{ notification.id }}"
+                    >View Review</a
+                  >
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %} {% else %}
+        <div class="alert alert-info">
+          <p class="mb-0">You don't have any notifications yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <p>&copy; 2023 Exchangify. All rights reserved.</p>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <a href="/about" class="text-white me-3">About</a>
+            <a href="/contact" class="text-white me-3">Contact</a>
+            <a href="/terms" class="text-white me-3">Terms</a>
+            <a href="/privacy" class="text-white">Privacy</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Filter notifications
+        const filterButtons = document.querySelectorAll(".filter-btn");
+        const notifications = document.querySelectorAll(".notification-card");
+
+        filterButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            // Remove active class from all buttons
+            filterButtons.forEach((btn) => btn.classList.remove("active"));
+
+            // Add active class to clicked button
+            this.classList.add("active");
+
+            const filter = this.getAttribute("data-filter");
+
+            // Show/hide notifications based on filter
+            notifications.forEach((notification) => {
+              if (
+                filter === "all" ||
+                notification.getAttribute("data-notification-type") === filter
+              ) {
+                notification.style.display = "block";
+              } else {
+                notification.style.display = "none";
+              }
+            });
+          });
+        });
+        // Mark notification as read on click
+        const viewButtons = document.querySelectorAll(".view-btn");
+        viewButtons.forEach((button) => {
+          button.addEventListener("click", function (event) {
+            event.preventDefault();
+            const notificationId = this.getAttribute("data-notification-id");
+            const url = this.getAttribute("href");
+
+            // Send AJAX request to mark as read
+            fetch(`/api/notifications/read/${notificationId}`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                // Navigate to the link
+                window.location.href = url;
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+                // Navigate even if request fails
+                window.location.href = url;
+              });
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .chat-container {
+            height: 80vh;
+            display: flex;
+        }
+        .user-list {
+            width: 30%;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+        }
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .message {
+            max-width: 80%;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+        .message-sent {
+            background-color: #0d6efd;
+            color: white;
+            margin-left: auto;
+        }
+        .message-received {
+            background-color: #f1f1f1;
+        }
+        .message-time {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            opacity: 0.8;
+        }
+        .input-area {
+            padding: 10px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+        }
+        .user-item {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+            cursor: pointer;
+        }
+        .user-item:hover, .user-item.active {
+            background-color: #f8f9fa;
+        }
+        .user-search {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo" alt="Logo">
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/user_dashboard" class="nav-link">
+                        <i class="nav-icon">📊</i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/profile/{{ session['user_id'] }}" class="nav-link">
+                        <i class="nav-icon">👤</i>
+                        <span>Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/add_review" class="nav-link">
+                        <i class="nav-icon">✍️</i>
+                        <span>Add Review</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/my_installments" class="nav-link">
+                        <i class="nav-icon">💰</i>
+                        <span>My Installments</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/donations" class="nav-link">
+                        <i class="nav-icon">🎁</i>
+                        <span  class="nav-link">
+                        <i class="nav-icon">🎁</i>
+                        <span>Donations</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="/chat" class="nav-link">
+                        <i class="nav-icon">💬</i>
+                        <span>Chat</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content gradient-bg">
+            <!-- Logout Button -->
+            <a href="/logout" class="btn btn-light" style="position: absolute; top: 20px; right: 20px; z-index: 100;">
+                <i class="nav-icon">🚪</i> Logout
+            </a>
+            
+            <div class="content-container">
+                <h2 class="text-white mb-4">Chat</h2>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="chat-container border rounded bg-white">
+                    <!-- User list sidebar -->
+                    <div class="user-list">
+                        <div class="user-search">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="nav-icon">🔍</i></span>
+                                <input type="text" id="userSearchInput" class="form-control" placeholder="Search users...">
+                            </div>
+                        </div>
+                        <div id="userList">
+                            <!-- User list will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Chat area -->
+                    <div class="chat-area">
+                        <div id="emptyState" class="empty-state">
+                            <i class="nav-icon" style="font-size: 3rem;">💬</i>
+                            <h4 class="mt-3">No conversation selected</h4>
+                            <p>Choose a user from the list to start chatting</p>
+                        </div>
+                        
+                        <div id="chatContent" style="display: none; height: 100%; flex-direction: column;">
+                            <div class="chat-header" id="chatHeader">
+                                <!-- Selected user info will appear here -->
+                            </div>
+                            
+                            <div class="messages-container" id="messagesContainer">
+                                <!-- Messages will be populated here -->
+                            </div>
+                            
+                            <div class="input-area">
+                                <input type="text" id="messageInput" class="form-control me-2" placeholder="Type a message...">
+                                <button id="sendButton" class="btn btn-primary">
+                                    <i class="nav-icon">📤</i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Current user ID from session
+        const currentUserId = {{ session.user_id|tojson }};
+        let selectedUserId = null;
+        let users = [];
+        
+        // DOM elements
+        const userSearchInput = document.getElementById('userSearchInput');
+        const userList = document.getElementById('userList');
+        const emptyState = document.getElementById('emptyState');
+        const chatContent = document.getElementById('chatContent');
+        const chatHeader = document.getElementById('chatHeader');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        
+        // Load users on page load
+        window.addEventListener('DOMContentLoaded', loadUsers);
+        
+        // Search users
+        userSearchInput.addEventListener('input', filterUsers);
+        
+        // Send message
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Load all users
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users/search');
+                users = await response.json();
+                renderUsers(users);
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+        
+        // Filter users based on search input
+        function filterUsers() {
+            const query = userSearchInput.value.toLowerCase();
+            const filteredUsers = users.filter(user => 
+                user.name.toLowerCase().includes(query)
+            );
+            renderUsers(filteredUsers);
+        }
+        
+        // Render users in the sidebar
+        function renderUsers(usersList) {
+            userList.innerHTML = '';
+            
+            usersList.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = `user-item ${user.id === selectedUserId ? 'active' : ''}`;
+                userItem.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" 
+                                 style="width: 40px; height: 40px;">
+                                ${user.name.charAt(0)}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div>${user.name}</div>
+                        </div>
+                    </div>
+                `;
+                
+                userItem.addEventListener('click', () => selectUser(user));
+                userList.appendChild(userItem);
+            });
+        }
+        
+        // Select a user to chat with
+        function selectUser(user) {
+            selectedUserId = user.id;
+            
+            // Update UI
+            emptyState.style.display = 'none';
+            chatContent.style.display = 'flex';
+            
+            // Update chat header
+            chatHeader.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" 
+                             style="width: 40px; height: 40px;">
+                            ${user.name.charAt(0)}
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div>${user.name}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Highlight selected user in the list
+            document.querySelectorAll('.user-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.user-item').forEach(item => {
+                if (item.textContent.includes(user.name)) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Load messages
+            loadMessages(user.id);
+        }
+        
+        // Load messages for the selected user
+        async function loadMessages(userId) {
+            try {
+                const response = await fetch(`/api/messages/${userId}`);
+                const messages = await response.json();
+                renderMessages(messages);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+        
+        // Render messages in the chat area
+        function renderMessages(messages) {
+            messagesContainer.innerHTML = '';
+            
+            messages.forEach(message => {
+                const messageElement = document.createElement('div');
+                const isSent = message.senderId === currentUserId;
+                
+                messageElement.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+                
+                const timestamp = new Date(message.timestamp);
+                const formattedTime = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                messageElement.innerHTML = `
+                    <div>${message.text}</div>
+                    <div class="message-time">${formattedTime}</div>
+                `;
+                
+                messagesContainer.appendChild(messageElement);
+            });
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Send a new message
+        async function sendMessage() {
+            const messageText = messageInput.value.trim();
+            
+            if (!messageText || !selectedUserId) return;
+            
+            try {
+                const response = await fetch('/api/messages/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        receiverId: selectedUserId,
+                        message: messageText
+                    })
+                });
+                
+                const newMessage = await response.json();
+                
+                // Add the new message to the UI
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message message-sent';
+                
+                const timestamp = new Date(newMessage.timestamp);
+                const formattedTime = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                messageElement.innerHTML = `
+                    <div>${newMessage.text}</div>
+                    <div class="message-time">${formattedTime}</div>
+                `;
+                
+                messagesContainer.appendChild(messageElement);
+                
+                // Clear input and scroll to bottom
+                messageInput.value = '';
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+    </script>
+</body>
+</html>

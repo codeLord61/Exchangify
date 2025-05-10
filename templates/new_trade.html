@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Exchangify - Propose Trade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <style>
+      .listing-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .listing-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+      .listing-image {
+        height: 200px;
+        object-fit: cover;
+      }
+      .badge-corner {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1;
+      }
+      .trade-type-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        height: 100%;
+      }
+      .trade-type-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+      .trade-type-card.selected {
+        border: 2px solid #0d6efd;
+        background-color: #f8f9fa;
+      }
+      .trade-type-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+      .exchange-listing-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      .exchange-listing-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+      .exchange-listing-card.selected {
+        border: 2px solid #0d6efd;
+      }
+      .exchange-listing-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand" href="/home">
+          <img
+            src="{{ url_for('static', filename='logo.png') }}"
+            height="40"
+            alt="Exchangify"
+          />
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/home">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/listings">Browse</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/user_dashboard">Dashboard</a>
+            </li>
+          </ul>
+
+          <div class="nav-buttons ms-auto">
+            <a
+              href="/cart"
+              class="btn btn-outline-light position-relative me-2"
+            >
+              <i class="nav-icon">🛒</i>
+            </a>
+            <a
+              href="/wishlist"
+              class="btn btn-outline-light position-relative me-2"
+            >
+              <i class="nav-icon">❤️</i>
+            </a>
+            <div class="dropdown">
+              <button
+                class="btn btn-primary dropdown-toggle"
+                type="button"
+                id="userDropdown"
+                data-bs-toggle="dropdown"
+              >
+                <i class="nav-icon">👤</i> {{ session.user_name }}
+              </button>
+              <ul
+                class="dropdown-menu dropdown-menu-end"
+                aria-labelledby="userDropdown"
+              >
+                <li>
+                  <a class="dropdown-item" href="/user_dashboard">Dashboard</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/my_listings">My Listings</a>
+                </li>
+                <li><a class="dropdown-item" href="/trades">My Trades</a></li>
+                <li>
+                  <a class="dropdown-item" href="/profile/{{ session.user_id }}"
+                    >Profile</a
+                  >
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li><a class="dropdown-item" href="/logout">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+      <h1 class="mb-4">Propose Trade</h1>
+
+      <div class="row">
+        <!-- Listing Details -->
+        <div class="col-lg-4 mb-4">
+          <div class="card listing-card h-100">
+            <span
+              class="badge-corner badge {% if listing.listing_type == 'sale' %}bg-primary{% elif listing.listing_type == 'exchange' %}bg-success{% elif listing.listing_type == 'loan' %}bg-warning{% else %}bg-info{% endif %}"
+            >
+              {{ listing.listing_type|capitalize }}
+            </span>
+            {% if listing.images %}
+            <img
+              src="{{ url_for('static', filename='uploads/listings/' + listing.images[0].filename) }}"
+              class="card-img-top listing-image"
+              alt="{{ listing.title }}"
+            />
+            {% else %}
+            <div
+              class="card-img-top listing-image bg-light d-flex align-items-center justify-content-center"
+            >
+              <span class="text-muted">No Image</span>
+            </div>
+            {% endif %}
+            <div class="card-body">
+              <h5 class="card-title">{{ listing.title }}</h5>
+              <p class="card-text">{{ listing.description }}</p>
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                {% if listing.price %}
+                <span class="fw-bold">${{ "%.2f"|format(listing.price) }}</span>
+                {% else %}
+                <span class="text-muted">No Price</span>
+                {% endif %}
+                <span class="badge bg-secondary">{{ listing.condition }}</span>
+              </div>
+              <p class="card-text">
+                <small class="text-muted">
+                  Listed by: {{ listing.owner.first_name }} {{
+                  listing.owner.last_name }}<br />
+                  Location: {{ listing.location or 'Not specified' }}
+                </small>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trade Form -->
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Trade Details</h5>
+            </div>
+            <div class="card-body">
+              <form action="/trades/new/{{ listing.id }}" method="POST">
+                <!-- Trade Type Selection (Excluded for Donations) -->
+                {% if listing.listing_type != 'donation' %}
+                <div class="mb-4">
+                  <label class="form-label">Select Trade Type</label>
+                  <div class="row g-3">
+                    {% if listing.listing_type == 'sale' %}
+                    <div class="col-md-4">
+                      <div
+                        class="card trade-type-card h-100"
+                        data-trade-type="exchange"
+                      >
+                        <div class="card-body text-center">
+                          <div class="trade-type-icon">🔄</div>
+                          <h5 class="card-title">Exchange</h5>
+                          <p class="card-text">
+                            Offer one of your items in exchange
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %} {% if listing.listing_type == 'exchange' %}
+                    <div class="col-md-4">
+                      <div
+                        class="card trade-type-card h-100"
+                        data-trade-type="exchange"
+                      >
+                        <div class="card-body text-center">
+                          <div class="trade-type-icon">🔄</div>
+                          <h5 class="card-title">Exchange</h5>
+                          <p class="card-text">
+                            Offer one of your items in exchange
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %} {% if listing.listing_type == 'loan' %}
+                    <div class="col-md-4">
+                      <div
+                        class="card trade-type-card h-100"
+                        data-trade-type="loan"
+                      >
+                        <div class="card-body text-center">
+                          <div class="trade-type-icon">📅</div>
+                          <h5 class="card-title">Borrow</h5>
+                          <p class="card-text">
+                            Borrow this item for {{ listing.loan_duration }}
+                            days
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endif %}
+                <div class="mb-3">
+                  <input
+                    type="hidden"
+                    id="trade_type"
+                    name="trade_type"
+                    value="{% if listing.listing_type == 'donation' %}donation{% endif %}"
+                    required
+                  />
+                </div>
+
+                <!-- Exchange Listings (only shown for exchange trade type) -->
+                <div id="exchange-section" class="mb-4" style="display: none">
+                  <label class="form-label">Select an item to offer</label>
+                  {% if user_listings %}
+                  <div class="list-group">
+                    {% for user_listing in user_listings %}
+                    <div
+                      class="list-group-item exchange-listing-card d-flex align-items-center"
+                      data-listing-id="{{ user_listing.id }}"
+                    >
+                      <div class="flex-shrink-0">
+                        {% if user_listing.images %}
+                        <img
+                          src="{{ url_for('static', filename='uploads/listings/' + user_listing.images[0].filename) }}"
+                          class="exchange-listing-image"
+                          alt="{{ user_listing.title }}"
+                        />
+                        {% else %}
+                        <div
+                          class="exchange-listing-image bg-light d-flex align-items-center justify-content-center"
+                        >
+                          <span class="text-muted small">No Image</span>
+                        </div>
+                        {% endif %}
+                      </div>
+                      <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-0">{{ user_listing.title }}</h6>
+                        <p class="mb-0 small">
+                          <span
+                            class="badge {% if user_listing.listing_type == 'sale' %}bg-primary{% elif user_listing.listing_type == 'exchange' %}bg-success{% elif user_listing.listing_type == 'loan' %}bg-warning{% else %}bg-info{% endif %}"
+                          >
+                            {{ user_listing.listing_type|capitalize }}
+                          </span>
+                          <span class="badge bg-secondary"
+                            >{{ user_listing.condition }}</span
+                          >
+                          {% if user_listing.price %}
+                          <span>${{ "%.2f"|format(user_listing.price) }}</span>
+                          {% endif %}
+                        </p>
+                      </div>
+                      <div class="form-check ms-3">
+                        <input
+                          class="form-check-input"
+                          type="radio"
+                          name="offered_listing_id"
+                          id="listing{{ user_listing.id }}"
+                          value="{{ user_listing.id }}"
+                        />
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% else %}
+                  <div class="alert alert-warning">
+                    <p class="mb-0">
+                      You don't have any active listings to offer for exchange.
+                      <a href="/listings/new" class="alert-link"
+                        >Create a listing</a
+                      >
+                      first.
+                    </p>
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- Message -->
+                <div class="mb-4">
+                  <label for="message" class="form-label"
+                    >Message to Seller</label
+                  >
+                  <textarea
+                    class="form-control"
+                    id="message"
+                    name="message"
+                    rows="4"
+                    placeholder="Introduce yourself and explain why you're interested in this item..."
+                  ></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-flex justify-content-between">
+                  <a href="/listings/{{ listing.id }}" class="btn btn-secondary"
+                    >Cancel</a
+                  >
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    id="submit-btn"
+                    disabled
+                  >
+                    Send Trade Request
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <p>&copy; 2023 Exchangify. All rights reserved.</p>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <a href="/about" class="text-white me-3">About</a>
+            <a href="/contact" class="text-white me-3">Contact</a>
+            <a href="/terms" class="text-white me-3">Terms</a>
+            <a href="/privacy" class="text-white">Privacy</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tradeTypeCards = document.querySelectorAll(".trade-type-card");
+        const tradeTypeInput = document.getElementById("trade_type");
+        const exchangeSection = document.getElementById("exchange-section");
+        const submitBtn = document.getElementById("submit-btn");
+        const exchangeListingCards = document.querySelectorAll(
+          ".exchange-listing-card"
+        );
+
+        // Enable button if trade type is pre-set (e.g., for donations)
+        if (tradeTypeInput.value === "donation") {
+          submitBtn.disabled = false;
+        }
+
+        // Trade type selection
+        tradeTypeCards.forEach((card) => {
+          card.addEventListener("click", function () {
+            tradeTypeCards.forEach((c) => c.classList.remove("selected"));
+            this.classList.add("selected");
+            const tradeType = this.getAttribute("data-trade-type");
+            tradeTypeInput.value = tradeType;
+            if (tradeType === "exchange") {
+              exchangeSection.style.display = "block";
+              const hasListings =
+                document.querySelector('input[name="offered_listing_id"]') !==
+                null;
+              submitBtn.disabled = !hasListings;
+            } else {
+              exchangeSection.style.display = "none";
+              submitBtn.disabled = false;
+            }
+          });
+        });
+
+        // Exchange listing selection
+        exchangeListingCards.forEach((card) => {
+          card.addEventListener("click", function () {
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            exchangeListingCards.forEach((c) => c.classList.remove("selected"));
+            this.classList.add("selected");
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

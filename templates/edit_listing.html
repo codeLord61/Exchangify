@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - Edit Listing</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .image-preview {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .image-preview-wrapper {
+            position: relative;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .image-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+        }
+        .image-action-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/home">
+                <img src="{{ url_for('static', filename='logo.png') }}" height="40" alt="Exchangify">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/listings">Browse</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/user_dashboard">Dashboard</a>
+                    </li>
+                </ul>
+                
+                <div class="nav-buttons ms-auto">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="nav-icon">👤</i> {{ session.user_name }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="/user_dashboard">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/my_listings">My Listings</a></li>
+                            <li><a class="dropdown-item" href="/trades">My Trades</a></li>
+                            <li><a class="dropdown-item" href="/profile/{{ session.user_id }}">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="mb-0">Edit Listing</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="/listings/{{ listing.id }}/edit" method="POST" enctype="multipart/form-data">
+                            <!-- Basic Information -->
+                            <div class="form-section active" id="section-basic">
+                                <h4 class="mb-3">Basic Information</h4>
+                                
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Title *</label>
+                                    <input type="text" class="form-control" id="title" name="title" value="{{ listing.title }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description *</label>
+                                    <textarea class="form-control" id="description" name="description" rows="5" required>{{ listing.description }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="category_id" class="form-label">Category *</label>
+                                    <select class="form-select" id="category_id" name="category_id" required>
+                                        {% for category in categories %}
+                                            <option value="{{ category.id }}" {% if category.id == listing.category_id %}selected{% endif %}>{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="condition" class="form-label">Condition *</label>
+                                    <select class="form-select" id="condition" name="condition" required>
+                                        <option value="New" {% if listing.condition == 'New' %}selected{% endif %}>New</option>
+                                        <option value="Like New" {% if listing.condition == 'Like New' %}selected{% endif %}>Like New</option>
+                                        <option value="Good" {% if listing.condition == 'Good' %}selected{% endif %}>Good</option>
+                                        <option value="Fair" {% if listing.condition == 'Fair' %}selected{% endif %}>Fair</option>
+                                        <option value="Poor" {% if listing.condition == 'Poor' %}selected{% endif %}>Poor</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="listing_type" class="form-label">Listing Type *</label>
+                                    <select class="form-select" id="listing_type" name="listing_type" required>
+                                        <option value="sale" {% if listing.listing_type == 'sale' %}selected{% endif %}>For Sale</option>
+                                        <option value="exchange" {% if listing.listing_type == 'exchange' %}selected{% endif %}>For Exchange</option>
+                                        <option value="loan" {% if listing.listing_type == 'loan' %}selected{% endif %}>For Loan</option>
+                                        <option value="donation" {% if listing.listing_type == 'donation' %}selected{% endif %}>Donation</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3" id="price-field" {% if listing.listing_type != 'sale' %}style="display: none;"{% endif %}>
+                                    <label for="price" class="form-label">Price ($) *</label>
+                                    <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" value="{{ listing.price or '' }}">
+                                </div>
+                                
+                                <div class="mb-3" id="exchange-field" {% if listing.listing_type != 'exchange' %}style="display: none;"{% endif %}>
+                                    <label for="exchange_preferences" class="form-label">Exchange Preferences *</label>
+                                    <textarea class="form-control" id="exchange_preferences" name="exchange_preferences" rows="3">{{ listing.exchange_preferences or '' }}</textarea>
+                                    <div class="form-text">Describe what you're looking to exchange this item for.</div>
+                                </div>
+                                
+                                <div class="mb-3" id="loan-field" {% if listing.listing_type != 'loan' %}style="display: none;"{% endif %}>
+                                    <label for="loan_duration" class="form-label">Loan Duration (days) *</label>
+                                    <input type="number" class="form-control" id="loan_duration" name="loan_duration" min="1" value="{{ listing.loan_duration or '' }}">
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/my_listings'">Cancel</button>
+                                    <button type="button" class="btn btn-primary" onclick="showSection('section-location')">Next: Location</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Location Information -->
+                            <div class="form-section" id="section-location">
+                                <h4 class="mb-3">Location Information</h4>
+                                
+                                <div class="mb-3">
+                                    <label for="location" class="form-label">Location *</label>
+                                    <input type="text" class="form-control" id="location" name="location" value="{{ listing.location or '' }}" required>
+                                    <div class="form-text">Enter your city, neighborhood, or general area.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Coordinates (Optional)</label>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" id="latitude" name="latitude" placeholder="Latitude" value="{{ listing.latitude or '' }}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" id="longitude" name="longitude" placeholder="Longitude" value="{{ listing.longitude or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="form-text">These help buyers find items near them. Click the button below to use your current location.</div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-outline-secondary mb-3" onclick="getCurrentLocation()">
+                                    <i class="nav-icon">📍</i> Use My Current Location
+                                </button>
+                                
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-secondary" onclick="showSection('section-basic')">Back</button>
+                                    <button type="button" class="btn btn-primary" onclick="showSection('section-images')">Next: Images</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Images -->
+                            <div class="form-section" id="section-images">
+                                <h4 class="mb-3">Images</h4>
+                                
+                                {% if listing.images %}
+                                    <h5>Current Images</h5>
+                                    <div class="image-preview-container">
+                                        {% for image in listing.images %}
+                                            <div class="image-preview-wrapper">
+                                                <img src="{{ url_for('static', filename='uploads/listings/' + image.filename) }}" class="image-preview" alt="Listing Image">
+                                                <div class="image-actions">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="primary_image" id="primary_{{ image.id }}" value="{{ image.id }}" {% if image.is_primary %}checked{% endif %}>
+                                                        <label class="form-check-label" for="primary_{{ image.id }}">
+                                                            Primary
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="delete_image" id="delete_{{ image.id }}" value="{{ image.id }}">
+                                                        <label class="form-check-label" for="delete_{{ image.id }}">
+                                                            Delete
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="mb-3">
+                                    <label for="new_images" class="form-label">Add New Images</label>
+                                    <input type="file" class="form-control" id="new_images" name="new_images" multiple accept="image/*">
+                                    <div class="form-text">You can select multiple images. Maximum 5 images total.</div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-secondary" onclick="showSection('section-location')">Back</button>
+                                    <button type="submit" class="btn btn-success">Save Changes</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2023 Exchangify. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/about" class="text-white me-3">About</a>
+                    <a href="/contact" class="text-white me-3">Contact</a>
+                    <a href="/terms" class="text-white me-3">Terms</a>
+                    <a href="/privacy" class="text-white">Privacy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        // Show/hide fields based on listing type
+        document.getElementById('listing_type').addEventListener('change', function() {
+            const listingType = this.value;
+            
+            // Hide all conditional fields
+            document.getElementById('price-field').style.display = 'none';
+            document.getElementById('exchange-field').style.display = 'none';
+            document.getElementById('loan-field').style.display = 'none';
+            
+            // Show the relevant field based on listing type
+            if (listingType === 'sale') {
+                document.getElementById('price-field').style.display = 'block';
+            } else if (listingType === 'exchange') {
+                document.getElementById('exchange-field').style.display = 'block';
+            } else if (listingType === 'loan') {
+                document.getElementById('loan-field').style.display = 'block';
+            }
+        });
+        
+        // Function to get current location
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        document.getElementById('latitude').value = position.coords.latitude;
+                        document.getElementById('longitude').value = position.coords.longitude;
+                    },
+                    function(error) {
+                        alert('Error getting location: ' + error.message);
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+        
+        // Function to show a specific section
+        function showSection(sectionId) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.form-section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show the selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Scroll to top of form
+            window.scrollTo(0, document.querySelector('.card').offsetTop - 20);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - Sign Up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .signup-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .sidebar-logo {
+            height: 60px;
+        }
+        .welcome-text {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .btn-signup {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .toggle-password {
+            cursor: pointer;
+        }
+        .container {
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+        .profile-image-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 10px auto;
+            display: block;
+            border: 3px solid #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<div class="gradient-bg">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="signup-card">
+                    <div class="logo-container">
+                        <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo" alt="Logo">
+                    </div>
+                    
+                    <div class="welcome-text">Create an Account</div>
+                    <p class="text-muted mb-4 text-center">Join Exchangify today</p>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="/signup" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Account Information</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" name="username" placeholder="Choose a unique username" required>
+                                    <div id="username-feedback" class="invalid-feedback"></div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
+                                        <button class="btn btn-outline-secondary toggle-password" type="button">
+                                            <i class="eye-icon">👁️</i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Enter your first name" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Enter your last name" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="mobile" class="form-label">Mobile Number</label>
+                                    <input type="tel" class="form-control" id="mobile" name="mobile" placeholder="Enter your mobile number" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="">Select gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="profile_image" class="form-label">Profile Image</label>
+                                    <input type="file" class="form-control" id="profile_image" name="profile_image" accept="image/*">
+                                    <img id="profile_preview" src="{{ url_for('static', filename='default-profile.png') }}" class="profile-image-preview mt-2" style="display: none;">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Location Information</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="2" placeholder="Enter your address" required></textarea>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="city" class="form-label">City</label>
+                                        <input type="text" class="form-control" id="city" name="city" placeholder="Enter your city" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="state" class="form-label">State/Province</label>
+                                        <input type="text" class="form-control" id="state" name="state" placeholder="Enter your state" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="zip_code" class="form-label">Zip/Postal Code</label>
+                                        <input type="text" class="form-control" id="zip_code" name="zip_code" placeholder="Enter your zip code" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="country" class="form-label">Country</label>
+                                        <input type="text" class="form-control" id="country" name="country" placeholder="Enter your country" value="United States" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Location on Map</label>
+                                    <div id="map" style="height: 200px; width: 100%; border-radius: 5px;"></div>
+                                    <p class="form-text mt-1">Drag the marker to set your exact location</p>
+                                    <input type="hidden" id="latitude" name="latitude">
+                                    <input type="hidden" id="longitude" name="longitude">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="terms" required>
+                            <label class="form-check-label" for="terms">I agree to the Terms of Service and Privacy Policy</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-signup w-100">Sign Up</button>
+                    </form>
+                    
+                    <div class="mt-3 text-center">
+                        <a href="/login">Already have an account? Log in</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password toggle
+        const toggleButton = document.querySelector('.toggle-password');
+        
+        toggleButton.addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+        });
+        
+        // Profile image preview
+        const profileInput = document.getElementById('profile_image');
+        const profilePreview = document.getElementById('profile_preview');
+        
+        profileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    profilePreview.src = e.target.result;
+                    profilePreview.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // Username availability check
+        const usernameInput = document.getElementById('username');
+        const usernameFeedback = document.getElementById('username-feedback');
+        
+        usernameInput.addEventListener('blur', function() {
+            if (this.value.trim() !== '') {
+                // Send AJAX request to check username availability
+                fetch('/check_username?username=' + encodeURIComponent(this.value))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.available) {
+                            usernameInput.classList.add('is-invalid');
+                            usernameFeedback.textContent = 'This username is already taken. Please choose another one.';
+                            usernameFeedback.style.display = 'block';
+                        } else {
+                            usernameInput.classList.remove('is-invalid');
+                            usernameInput.classList.add('is-valid');
+                            usernameFeedback.style.display = 'none';
+                        }
+                    });
+            }
+        });
+    });
+    
+    // Initialize map
+    function initMap() {
+        // Default location (New York City)
+        let defaultLocation = { lat: 40.7128, lng: -74.0060 };
+        
+        // Create map
+        const map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 13,
+            center: defaultLocation,
+        });
+        
+        // Try to get user's current location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    
+                    // Center map on user's location
+                    map.setCenter(userLocation);
+                    
+                    // Create marker at user's location
+                    createMarker(map, userLocation);
+                },
+                () => {
+                    // If geolocation fails, use default location
+                    createMarker(map, defaultLocation);
+                }
+            );
+        } else {
+            // Browser doesn't support geolocation
+            createMarker(map, defaultLocation);
+        }
+    }
+    
+    function createMarker(map, position) {
+        // Create draggable marker
+        const marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            draggable: true
+        });
+        
+        // Set initial form values
+        document.getElementById('latitude').value = position.lat;
+        document.getElementById('longitude').value = position.lng;
+        
+        // Update form values when marker is dragged
+        marker.addListener('dragend', function() {
+            const position = marker.getPosition();
+            document.getElementById('latitude').value = position.lat();
+            document.getElementById('longitude').value = position.lng();
+        });
+    }
+</script>
+
+<!-- Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+</body>
+</html>

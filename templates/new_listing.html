@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create New Listing - Exchangify</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .form-section {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .image-preview {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .listing-type-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        .listing-type-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .listing-type-card.selected {
+            border: 2px solid #0d6efd;
+            background-color: #f0f7ff;
+        }
+        .type-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="{{ url_for('static', filename='logo.png') }}" height="40" alt="Exchangify">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/listings">Browse</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown">
+                            Categories
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
+                            {% for category in categories %}
+                                <li><a class="dropdown-item" href="/listings?category={{ category.id }}">{{ category.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                </ul>
+                
+                <div class="nav-buttons ms-auto">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="nav-icon">👤</i> {{ session.user_name }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="/user_dashboard">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/my_listings">My Listings</a></li>
+                            <li><a class="dropdown-item" href="/trades">My Trades</a></li>
+                            <li><a class="dropdown-item" href="/profile/{{ session.user_id }}">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <h1 class="mb-4">Create New Listing</h1>
+        
+        <form action="/listings/new" method="POST" enctype="multipart/form-data">
+            <!-- Listing Type Selection -->
+            <div class="form-section">
+                <h4 class="mb-3">What would you like to do with your item?</h4>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="card listing-type-card text-center h-100" data-type="sale">
+                            <div class="card-body">
+                                <div class="type-icon text-primary">💰</div>
+                                <h5 class="card-title">Sell</h5>
+                                <p class="card-text">List your item for sale</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card listing-type-card text-center h-100" data-type="exchange">
+                            <div class="card-body">
+                                <div class="type-icon text-success">🔄</div>
+                                <h5 class="card-title">Exchange</h5>
+                                <p class="card-text">Trade your item for something else</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card listing-type-card text-center h-100" data-type="loan">
+                            <div class="card-body">
+                                <div class="type-icon text-warning">📅</div>
+                                <h5 class="card-title">Loan</h5>
+                                <p class="card-text">Let someone borrow your item</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card listing-type-card text-center h-100" data-type="donation">
+                            <div class="card-body">
+                                <div class="type-icon text-info">🎁</div>
+                                <h5 class="card-title">Donate</h5>
+                                <p class="card-text">Give your item away for free</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="listing_type" name="listing_type" value="sale" required>
+            </div>
+            
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h4 class="mb-3">Basic Information</h4>
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                    <div class="form-text">A clear, concise title helps your listing get noticed.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
+                    <select class="form-select" id="category_id" name="category_id" required>
+                        <option value="">Select a category</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="condition" class="form-label">Condition <span class="text-danger">*</span></label>
+                    <select class="form-select" id="condition" name="condition" required>
+                        <option value="">Select condition</option>
+                        <option value="New">New</option>
+                        <option value="Like New">Like New</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                        <option value="Poor">Poor</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+                    <div class="form-text">Provide details about your item, including features, specifications, and any defects.</div>
+                </div>
+            </div>
+            
+            <!-- Type-specific Information -->
+            <div id="saleSection" class="form-section">
+                <h4 class="mb-3">Sale Information</h4>
+                <div class="mb-3">
+                    <label for="price" class="form-label">Price ($) <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="price" name="price" step="0.01" min="0">
+                </div>
+            </div>
+            
+            <div id="exchangeSection" class="form-section" style="display: none;">
+                <h4 class="mb-3">Exchange Information</h4>
+                <div class="mb-3">
+                    <label for="exchange_preferences" class="form-label">What would you like in exchange? <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="exchange_preferences" name="exchange_preferences" rows="3"></textarea>
+                    <div class="form-text">Describe what items you're interested in receiving in exchange.</div>
+                </div>
+            </div>
+            
+            <div id="loanSection" class="form-section" style="display: none;">
+                <h4 class="mb-3">Loan Information</h4>
+                <div class="mb-3">
+                    <label for="loan_duration" class="form-label">Maximum Loan Duration (days) <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="loan_duration" name="loan_duration" min="1" max="365">
+                </div>
+            </div>
+            
+            <!-- Location Information -->
+            <div class="form-section">
+                <h4 class="mb-3">Location Information</h4>
+                <div class="mb-3">
+                    <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="location" name="location" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Pin on Map</label>
+                    <div id="map" style="height: 300px; width: 100%; border-radius: 5px;"></div>
+                    <div class="form-text">Drag the marker to set your exact location or click on the map.</div>
+                    <input type="hidden" id="latitude" name="latitude">
+                    <input type="hidden" id="longitude" name="longitude">
+                </div>
+            </div>
+            
+            <!-- Images -->
+            <div class="form-section">
+                <h4 class="mb-3">Images</h4>
+                <div class="mb-3">
+                    <label for="images" class="form-label">Upload Images <span class="text-danger">*</span></label>
+                    <input type="file" class="form-control" id="images" name="images" multiple accept="image/*">
+                    <div class="form-text">You can upload up to 5 images. The first image will be the main image.</div>
+                </div>
+                
+                <div id="imagePreviewContainer" class="image-preview-container"></div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">Create Listing</button>
+                <a href="/my_listings" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2023 Exchangify. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/about" class="text-white me-3">About</a>
+                    <a href="/contact" class="text-white me-3">Contact</a>
+                    <a href="/terms" class="text-white me-3">Terms</a>
+                    <a href="/privacy" class="text-white">Privacy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Listing type selection
+            const typeCards = document.querySelectorAll('.listing-type-card');
+            const typeInput = document.getElementById('listing_type');
+            const saleSection = document.getElementById('saleSection');
+            const exchangeSection = document.getElementById('exchangeSection');
+            const loanSection = document.getElementById('loanSection');
+            
+            // Set default selected type
+            typeCards[0].classList.add('selected');
+            
+            typeCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Remove selected class from all cards
+                    typeCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // Add selected class to clicked card
+                    this.classList.add('selected');
+                    
+                    // Update hidden input
+                    const type = this.getAttribute('data-type');
+                    typeInput.value = type;
+                    
+                    // Show/hide relevant sections
+                    saleSection.style.display = type === 'sale' ? 'block' : 'none';
+                    exchangeSection.style.display = type === 'exchange' ? 'block' : 'none';
+                    loanSection.style.display = type === 'loan' ? 'block' : 'none';
+                    
+                    // Update required fields
+                    document.getElementById('price').required = type === 'sale';
+                    document.getElementById('exchange_preferences').required = type === 'exchange';
+                    document.getElementById('loan_duration').required = type === 'loan';
+                });
+            });
+            
+            // Image preview
+            const imageInput = document.getElementById('images');
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            
+            imageInput.addEventListener('change', function() {
+                previewContainer.innerHTML = '';
+                
+                if (this.files) {
+                    const maxFiles = 5;
+                    const files = Array.from(this.files).slice(0, maxFiles);
+                    
+                    files.forEach((file, index) => {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            const preview = document.createElement('img');
+                            preview.src = e.target.result;
+                            preview.className = 'image-preview';
+                            preview.title = file.name;
+                            
+                            if (index === 0) {
+                                preview.style.border = '2px solid #0d6efd';
+                                preview.title += ' (Main Image)';
+                            }
+                            
+                            previewContainer.appendChild(preview);
+                        }
+                        
+                        reader.readAsDataURL(file);
+                    });
+                    
+                    if (this.files.length > maxFiles) {
+                        alert(`You can only upload up to ${maxFiles} images. Only the first ${maxFiles} will be used.`);
+                    }
+                }
+            });
+        });
+        
+        // Initialize map
+        function initMap() {
+            // Default location (New York City)
+            let defaultLocation = { lat: 40.7128, lng: -74.0060 };
+            
+            // Create map
+            const map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 13,
+                center: defaultLocation,
+            });
+            
+            // Try to get user's current location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        // Center map on user's location
+                        map.setCenter(userLocation);
+                        
+                        // Create marker at user's location
+                        createMarker(map, userLocation);
+                    },
+                    () => {
+                        // If geolocation fails, use default location
+                        createMarker(map, defaultLocation);
+                    }
+                );
+            } else {
+                // Browser doesn't support geolocation
+                createMarker(map, defaultLocation);
+            }
+            
+            // Add click event to map
+            map.addListener('click', function(e) {
+                // Update marker position
+                marker.setPosition(e.latLng);
+                
+                // Update form values
+                document.getElementById('latitude').value = e.latLng.lat();
+                document.getElementById('longitude').value = e.latLng.lng();
+            });
+            
+            // Global marker variable
+            let marker;
+            
+            function createMarker(map, position) {
+                // Create draggable marker
+                marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    draggable: true
+                });
+                
+                // Set initial form values
+                document.getElementById('latitude').value = position.lat;
+                document.getElementById('longitude').value = position.lng;
+                
+                // Update form values when marker is dragged
+                marker.addListener('dragend', function() {
+                    const position = marker.getPosition();
+                    document.getElementById('latitude').value = position.lat();
+                    document.getElementById('longitude').value = position.lng();
+                });
+            }
+        }
+    </script>
+
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+</body>
+</html>

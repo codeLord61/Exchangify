@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - User Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .status-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .status-approved, .status-accepted {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-rejected {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-completed {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .feature-card {
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .listing-card {
+            transition: all 0.3s ease;
+        }
+        .listing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .listing-image {
+            height: 150px;
+            object-fit: cover;
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #343a40;
+            color: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .logo-container {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
+            max-width: 100%;
+            height: 40px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-item {
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover, .nav-item.active .nav-link {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+
+        .content-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+
+        .dashboard-container {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo" alt="Logo">
+    </div>
+    <ul class="nav-menu">
+        <li class="nav-item">
+            <a href="/home" class="nav-link">
+                <i class="nav-icon">🏠</i>
+                <span>Home</span>
+            </a>
+        </li>
+        <li class="nav-item active">
+            <a href="/user_dashboard" class="nav-link">
+                <i class="nav-icon">📊</i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/profile/{{ user.id }}" class="nav-link">
+                <i class="nav-icon">👤</i>
+                <span>Profile</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/my_listings" class="nav-link" onclick="window.location.href='/my_listings'; return false;">
+                <i class="nav-icon">📦</i>
+                <span>My Listings</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/listings" class="nav-link" onclick="window.location.href='/listings'; return false;">
+                <i class="nav-icon">🔍</i>
+                <span>Browse Listings</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/trades" class="nav-link">
+                <i class="nav-icon">🔄</i>
+                <span>My Trades</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/wishlist" class="nav-link">
+                <i class="nav-icon">❤️</i>
+                <span>Wishlist</span>
+                {% if wishlist_count > 0 %}
+                <span class="badge bg-primary rounded-pill">{{ wishlist_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/cart" class="nav-link">
+                <i class="nav-icon">🛒</i>
+                <span>Cart</span>
+                {% if cart_count > 0 %}
+                <span class="badge bg-primary rounded-pill">{{ cart_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/my_installments" class="nav-link">
+                <i class="nav-icon">💰</i>
+                <span>My Installments</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/donations" class="nav-link">
+                <i class="nav-icon">🎁</i>
+                <span>Donations</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/chat" class="nav-link">
+                <i class="nav-icon">💬</i>
+                <span>Chat</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/notifications" class="nav-link">
+                <i class="nav-icon">🔔</i>
+                <span>Notifications</span>
+                {% if unread_notifications > 0 %}
+                <span class="badge bg-danger rounded-pill">{{ unread_notifications }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </ul>
+</div>
+
+        <!-- Main Content -->
+        <div class="main-content gradient-bg">
+            <!-- Logout Button -->
+            <a href="/logout" class="btn btn-light logout-btn">
+                <i class="nav-icon">🚪</i> Logout
+            </a>
+            
+            <div class="content-container">
+                <h2 class="text-white mb-4">Welcome, {{ user.first_name }}!</h2>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Quick Actions Row -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card feature-card h-100">
+                            <div class="card-body text-center">
+                                <div class="feature-icon text-primary">📦</div>
+                                <h5 class="card-title">Create Listing</h5>
+                                <p class="card-text">List an item for sale, exchange, loan, or donation.</p>
+                                <a href="/listings/new" class="btn btn-primary">Create Now</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card feature-card h-100">
+                            <div class="card-body text-center">
+                                <div class="feature-icon text-success">🔍</div>
+                                <h5 class="card-title">Browse Items</h5>
+                                <p class="card-text">Find items to buy, exchange, or borrow.</p>
+                                <a href="/listings" class="btn btn-success">Browse Now</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card feature-card h-100">
+                            <div class="card-body text-center">
+                                <div class="feature-icon text-info">💬</div>
+                                <h5 class="card-title">Chat with Others</h5>
+                                <p class="card-text">Connect with other users through our chat system.</p>
+                                <a href="/chat" class="btn btn-info">Start Chatting</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card feature-card h-100">
+                            <div class="card-body text-center">
+                                <div class="feature-icon text-warning">🎁</div>
+                                <h5 class="card-title">Make a Donation</h5>
+                                <p class="card-text">Donate items to others or to the organization.</p>
+                                <a href="/donations/new" class="btn btn-warning">Donate Now</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- User Profile Card -->
+                    <div class="col-md-4">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Your Profile</h5>
+                            </div>
+                            <div class="card-body text-center">
+                                {% if user.profile_image %}
+                                <img src="{{ url_for('static', filename='uploads/profiles/' + user.profile_image) }}" class="profile-image mb-3" alt="Profile Image">
+                                {% else %}
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto profile-image mb-3">
+                                    <span class="text-white fs-1">{{ user.first_name[0] }}{{ user.last_name[0] }}</span>
+                                </div>
+                                {% endif %}
+                                <h4 class="mb-0">{{ user.first_name }} {{ user.last_name }}</h4>
+                                <p class="text-muted">{{ user.email }}</p>
+                                <div class="d-grid gap-2">
+                                    <a href="/edit_profile" class="btn btn-primary">Edit Profile</a>
+                                    <a href="/profile/{{ user.id }}" class="btn btn-outline-secondary">View Public Profile</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Listings -->
+                    <div class="col-md-8">
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Your Recent Listings</h5>
+                                <a href="/my_listings" class="btn btn-sm btn-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                {% if recent_listings %}
+                                <div class="row">
+                                    {% for listing in recent_listings %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card listing-card h-100">
+                                            {% if listing.images %}
+                                            <img src="{{ url_for('static', filename='uploads/listings/' + listing.images[0].filename) }}" class="card-img-top listing-image" alt="{{ listing.title }}">
+                                            {% else %}
+                                            <div class="card-img-top listing-image bg-light d-flex align-items-center justify-content-center">
+                                                <span class="text-muted">No Image</span>
+                                            </div>
+                                            {% endif %}
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ listing.title }}</h6>
+                                                <p class="card-text">
+                                                    <span class="badge bg-info">{{ listing.listing_type|capitalize }}</span>
+                                                    {% if listing.price %}
+                                                    <span class="badge bg-success">${{ "%.2f"|format(listing.price) }}</span>
+                                                    {% endif %}
+                                                </p>
+                                                <a href="/listings/{{ listing.id }}" class="btn btn-sm btn-outline-primary">View</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <p class="mb-3">You haven't created any listings yet.</p>
+                                    <a href="/listings/new" class="btn btn-primary">Create Your First Listing</a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Recent Trades -->
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Recent Trades</h5>
+                                <a href="/trades" class="btn btn-sm btn-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                {% if recent_trades %}
+                                <div class="list-group">
+                                    {% for trade in recent_trades %}
+                                    <a href="/trades/{{ trade.id }}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ trade.listing.title }}</h6>
+                                            <small>
+                                                <span class="badge status-{{ trade.status }}">
+                                                    {{ trade.status|upper }}
+                                                </span>
+                                            </small>
+                                        </div>
+                                        <p class="mb-1">
+                                            <span class="badge bg-info">{{ trade.trade_type|capitalize }}</span>
+                                            {% if trade.initiator_id == user.id %}
+                                            <small>With: {{ trade.receiver.first_name }} {{ trade.receiver.last_name }}</small>
+                                            {% else %}
+                                            <small>From: {{ trade.initiator.first_name }} {{ trade.initiator.last_name }}</small>
+                                            {% endif %}
+                                        </p>
+                                        <small>{{ trade.created_at.strftime('%m/%d/%y') }}</small>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted text-center py-3">No recent trades.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Chats -->
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Recent Conversations</h5>
+                                <a href="/chat" class="btn btn-sm btn-info">Open Chat</a>
+                            </div>
+                            <div class="card-body">
+                                {% if recent_chats %}
+                                    <div class="list-group">
+                                        {% for chat_user, last_time in recent_chats %}
+                                            <a href="/chat" class="list-group-item list-group-item-action">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="flex-shrink-0">
+                                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" 
+                                                             style="width: 40px; height: 40px;">
+                                                            {{ chat_user.first_name[0] }}{{ chat_user.last_name[0] }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <div>{{ chat_user.first_name }} {{ chat_user.last_name }}</div>
+                                                        <small class="text-muted">Last message: {{ last_time.strftime('%m/%d/%y %H:%M') }}</small>
+                                                    </div>
+                                                    {% if chat_user.is_online %}
+                                                    <span class="badge bg-success rounded-pill">Online</span>
+                                                    {% endif %}
+                                                </div>
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted text-center py-3">No recent conversations.</p>
+                                    <div class="text-center">
+                                        <a href="/chat" class="btn btn-outline-info">Start a new conversation</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Notification Check Script -->
+    <script>
+        // Check for new notifications every 30 seconds
+        setInterval(function() {
+            fetch('/api/notifications/count')
+                .then(response => response.json())
+                .then(data => {
+                    const notificationBadge = document.querySelector('.nav-item a[href="/notifications"] .badge');
+                    if (data.count > 0) {
+                        if (notificationBadge) {
+                            notificationBadge.textContent = data.count;
+                        } else {
+                            const newBadge = document.createElement('span');
+                            newBadge.className = 'badge bg-danger rounded-pill';
+                            newBadge.textContent = data.count;
+                            document.querySelector('.nav-item a[href="/notifications"]').appendChild(newBadge);
+                        }
+                    } else if (notificationBadge) {
+                        notificationBadge.remove();
+                    }
+                });
+        }, 30000);
+    </script>
+</body>
+</html>

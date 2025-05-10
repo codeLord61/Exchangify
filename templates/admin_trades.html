@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exchangify - Admin Trades</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="sidebar">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="sidebar-logo" alt="Logo">
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/admin_dashboard" class="nav-link">
+                    <i class="nav-icon">📊</i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/users" class="nav-link">
+                    <i class="nav-icon">👥</i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li class="nav-item active">
+                <a href="/admin/trades" class="nav-link">
+                    <i class="nav-icon">🔄</i>
+                    <span>Trades</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/installments" class="nav-link">
+                    <i class="nav-icon">💰</i>
+                    <span>Installments</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/reviews" class="nav-link">
+                    <i class="nav-icon">⭐</i>
+                    <span>Reviews</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content gradient-bg">
+        <!-- Logout Button -->
+        <a href="/logout" class="btn btn-light logout-btn">
+            <i class="nav-icon">🚪</i> Logout
+        </a>
+        
+        <div class="content-container">
+            <h2 class="text-white mb-4">Trades Management</h2>
+
+            <!-- Filter Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form action="/admin/trades" method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="type" class="form-label">Trade Type</label>
+                            <select name="type" id="type" class="form-select">
+                                <option value="">All Types</option>
+                                <option value="purchase" {% if trade_type == 'purchase' %}selected{% endif %}>Purchase</option>
+                                <option value="exchange" {% if trade_type == 'exchange' %}selected{% endif %}>Exchange</option>
+                                <option value="loan" {% if trade_type == 'loan' %}selected{% endif %}>Loan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" id="status" class="form-select">
+                                <option value="">All Statuses</option>
+                                <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="accepted" {% if status == 'accepted' %}selected{% endif %}>Accepted</option>
+                                <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="q" class="form-label">Search User</label>
+                            <input type="text" name="q" id="q" class="form-control" value="{{ search_query }}" placeholder="Name or Email">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Filter</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Trades Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        {% if trade_type %}{{ trade_type|capitalize }} {% endif %}
+                        Trades
+                        {% if status %} - {{ status|capitalize }}{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Initiator</th>
+                                    <th>Receiver</th>
+                                    <th>Item</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trade in trades %}
+                                    <tr>
+                                        <td>{{ trade.id }}</td>
+                                        <td>
+                                            <span class="badge {% if trade.trade_type == 'purchase' %}bg-primary{% elif trade.trade_type == 'exchange' %}bg-success{% elif trade.trade_type == 'loan' %}bg-warning{% else %}bg-info{% endif %}">
+                                                {{ trade.trade_type|capitalize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="/profile/{{ trade.initiator_id }}">
+                                                {{ trade.initiator.first_name }} {{ trade.initiator.last_name }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="/profile/{{ trade.receiver_id }}">
+                                                {{ trade.receiver.first_name }} {{ trade.receiver.last_name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ trade.listing.title|truncate(20) }}</td>
+                                        <td>
+                                            <span class="badge {% if trade.status == 'pending' %}bg-warning{% elif trade.status == 'accepted' %}bg-success{% elif trade.status == 'rejected' %}bg-danger{% else %}bg-info{% endif %}">
+                                                {{ trade.status|capitalize }}
+                                            </span>
+                                        </td>
+                                        <td>{{ trade.created_at.strftime('%m/%d/%y %H:%M') }}</td>
+                                        <td>{{ trade.updated_at.strftime('%m/%d/%y %H:%M') if trade.updated_at else '-' }}</td>
+                                        <td>
+                                            <a href="/trades/{{ trade.id }}" class="btn btn-sm btn-primary">View</a>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="9" class="text-center">No trades found.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
